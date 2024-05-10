@@ -1,0 +1,11 @@
+DATA:
+  image_size: 224
+
+MODEL:
+  img_model_name: 'facebook/dinov2-large'
+  latent_dim: 1024
+
+HYPER_PARAMETER:
+  batch_size: 64
+
+

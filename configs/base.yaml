@@ -1,0 +1,18 @@
+DATA_PATH:
+  train_csv_path: 'data/train.csv'
+  test_csv_path: 'data/test.csv'
+
+DATA:
+    aug_mode: 'cutmix' #'cutmix', 'mixup', 'cutmix_or_mixup'
+    aug_p: 1
+
+HYPER_PARAMETER:
+  epochs: 10
+  seed: 826
+  cv: 5
+  mixed_precision: 16
+
+OPTIMIZER:
+  optimizer: 'adamw'
+  learning_rate: '0.00003'
+  scheduler: 'cosine'
