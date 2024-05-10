@@ -1,0 +1,10 @@
+DATA:
+  image_size: 224
+
+MODEL:
+  img_model_name: 'microsoft/beit-base-patch16-224-pt22k-ft22k'
+  latent_dim: 768
+
+HYPER_PARAMETER:
+  batch_size: 64
+
