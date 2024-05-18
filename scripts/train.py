@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import json
 from pathlib import Path
 
 import numpy as np
@@ -21,7 +22,7 @@ from utils.utils import set_seeds
 from utils.config import load_cfg_from_cfg_file, merge_cfg_from_dict
 
 def get_args():
-    parser = argparse.ArgumentParser(description='Run files [train.py, test.py]')
+    parser = argparse.ArgumentParser(description='Run training')
 
     parser.add_argument('--cfg_path', default=f"{ROOT_DIR}/configs/dinov2-large.yaml", type=str,
                         help="Path to the config file in yaml format")
@@ -60,9 +61,11 @@ def train_one_fold(i, train_df, val_df, test_df, processor, cfg):
 
     model = ImageClassifier(ImageModel(cfg), cfg)
 
+    filename = f"{cfg.img_model_name.split('/')[-1]}_{i}"
+
     callbacks = [
         pl.callbacks.ModelCheckpoint(
-            dirpath=cfg.save_path, filename=f"{cfg.img_model_name.split(os.sep)[-1]}_{i}",
+            dirpath=cfg.save_path, filename=filename,
             monitor="val_f1", mode="max"
         ),
     ]
@@ -75,7 +78,7 @@ def train_one_fold(i, train_df, val_df, test_df, processor, cfg):
 
     trainer.fit(model, train_dataloader, val_dataloader)
 
-    ckpt = torch.load(os.path.join(cfg.save_path, f'{cfg.img_model_name.split(os.sep)[-1]}_{i}.ckpt'), map_location=torch.device('cuda'))
+    ckpt = torch.load(os.path.join(cfg.save_path, f'{filename}.ckpt'), map_location=torch.device('cuda'))
     model.load_state_dict(ckpt['state_dict'])
 
     # validate using val_df.
@@ -85,7 +88,7 @@ def train_one_fold(i, train_df, val_df, test_df, processor, cfg):
     y_preds = trainer.predict(model, dataloaders=test_dataloader)
     y_pred = np.vstack(y_preds)
     val_score = eval_dict['val_f1']
-    np.save(f'{cfg.save_path}/{cfg.img_model_name.split(os.sep)[-1]}_{i}_{val_score}', y_pred)
+    np.save(f'{cfg.save_path}/{filename}_{val_score}', y_pred)
 
     return val_score
 
@@ -98,20 +101,26 @@ def train(args):
     cfg = merge_cfg_from_dict(cfg, base_cfg)
     cfg = merge_cfg_from_dict(cfg, args.__dict__)
 
+    # make save_path dir
+    os.makedirs(cfg.save_path, exist_ok=True)
+
     # setup seed
     set_seeds(cfg.seed)
 
-    # setup dataframe
+    # setup label information
     label_dict = get_label_dict(cfg.train_csv_path)
+    cfg.num_class = len(label_dict)
+    with open(os.path.join(args.save_path, 'label_dict.json'),'w') as f:
+        json.dump(label_dict, f)
+
+    # setup dataframe
     train_df = process_dataframe(cfg.train_csv_path, label_dict, is_train=True)
     test_df = process_dataframe(cfg.test_csv_path, is_train=False)
-    cfg.num_class = len(label_dict)
 
     # setup processor
     processor = AutoImageProcessor.from_pretrained(cfg.img_model_name)
 
     # train all fold
-    os.makedirs(cfg.save_path, exist_ok=True)
     skf = StratifiedKFold(n_splits=cfg.cv, shuffle=True, random_state=cfg.seed)
 
     val_f1_list = []
