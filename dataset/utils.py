@@ -25,15 +25,6 @@ class Collator(object):
             'labels': data[1],
         }
         return data_dict
-def collate_fn(batch, augment_mode:str, num_class:int):
-    data = default_collate(batch)
-    augment = get_augment(augment_mode, num_class)
-    data = augment(data['pixel_values'], data['labels'])
-    data_dict = {
-        'pixel_values' : data[0],
-        'labels' : data[1],
-    }
-    return data_dict
 
 import pandas as pd
 def process_dataframe(csv_path:str, label_dict=None ,is_train=False):
