@@ -1,5 +1,5 @@
 # LowResolution_ImgClf
-저해상도 조류 이미지 분류 AI 경진대회, DACON (2024.04.08 ~ 2024.05.06)
+The following codes are the solutions **(3st place, private score: 0.98274)** for the dacon competition.
 
 ## Setup
     git clone https://github.com/GNOEYHEAT/LowResolution_ImgClf.git
